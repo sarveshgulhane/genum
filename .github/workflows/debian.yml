@@ -1,0 +1,56 @@
+name: Build Debian Package (Rust)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-deb:
+    runs-on: debian-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Create .deb package
+        run: |
+          APP_NAME=your-app
+          VERSION=$(grep '^version' Cargo.toml | head -1 | cut -d '"' -f2)
+          ARCH=amd64
+
+          mkdir -p pkg/DEBIAN
+          mkdir -p pkg/usr/bin
+
+          cp target/release/$APP_NAME pkg/usr/bin/
+
+          cat > pkg/DEBIAN/control <<EOF
+          Package: $APP_NAME
+          Version: $VERSION
+          Section: utils
+          Priority: optional
+          Architecture: $ARCH
+          Maintainer: CI <ci@github.com>
+          Description: Rust application
+           Built automatically by GitHub Actions
+          EOF
+
+          dpkg-deb --build pkg ${APP_NAME}_${VERSION}_${ARCH}.deb
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: "*.deb"
