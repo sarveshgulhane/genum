@@ -1,4 +1,4 @@
-name: Build Debian Package (Rust)
+name: Build Debian Package
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
 
       - name: Create .deb package
         run: |
-          APP_NAME=your-app
+          APP_NAME=genum
           VERSION=$(grep '^version' Cargo.toml | head -1 | cut -d '"' -f2)
           ARCH=amd64
 
